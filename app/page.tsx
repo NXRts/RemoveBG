@@ -122,17 +122,16 @@ export default function Home() {
                      {/* Result Area */}
                     <motion.div
                         layout
-                        className="relative w-full aspect-[16/9] md:aspect-[21/9] lg:aspect-video bg-black/50 rounded-2xl border border-white/10 overflow-hidden shadow-2xl"
+                        className="relative w-full bg-black/50 rounded-2xl border border-white/10 overflow-hidden shadow-2xl"
                     >
                         {!processedImage ? (
                             // Determine what to show while waiting? The loading overlay covers this.
                             // But we can show the original image blurred or something.
-                            <img src={originalImage} className="w-full h-full object-contain opacity-50 blur-sm" />
+                            <img src={originalImage} className="w-full h-auto object-contain opacity-50 blur-sm" />
                         ) : (
                             <ComparisonSlider 
                                 beforeImage={originalImage} 
                                 afterImage={processedImage} 
-                                className="h-full"
                             />
                         )}
                     </motion.div>
