@@ -12,12 +12,14 @@ export default function Home() {
   const [processedImage, setProcessedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleFileSelect = async (file: File) => {
     // Create local preview
     const objectUrl = URL.createObjectURL(file);
     setOriginalImage(objectUrl);
     setProcessedImage(null); // Reset previous result
+    setErrorMessage(null); // Clear previous errors
     setIsProcessing(true);
     setProgress(0);
 
@@ -56,10 +58,20 @@ export default function Home() {
       }, 500);
 
     } catch (error) {
-      console.error(error);
+      console.warn("Processing error (handled):", error);
       setIsProcessing(false);
       clearInterval(interval);
-      alert(error instanceof Error ? error.message : "Failed to process image. Please try again.");
+      
+      let message = "Failed to process image. Please try again.";
+      if (error instanceof Error) {
+        message = error.message;
+        // Improve phrasing for common API error
+        if (message.includes("Could not identify foreground")) {
+            message = "AI couldn't detect a clear subject. Please try an image with a distinct foreground.";
+        }
+      }
+      setErrorMessage(message);
+      setOriginalImage(null); // Reset so they can try again easily
     }
   };
 
@@ -77,6 +89,7 @@ export default function Home() {
     setOriginalImage(null);
     setProcessedImage(null);
     setProgress(0);
+    setErrorMessage(null);
   };
 
   return (
@@ -108,6 +121,17 @@ export default function Home() {
           </p>
         </motion.div>
 
+        {/* Error Message Display */}
+        {errorMessage && (
+            <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-destructive/10 border border-destructive/20 text-destructive px-6 py-3 rounded-lg flex items-center gap-2"
+            >
+                <span className="font-semibold">Error:</span> {errorMessage}
+            </motion.div>
+        )}
+
         {/* Main Interface */}
         <div className="w-full max-w-5xl">
             {isProcessing && <LoadingOverlay progress={progress} />}
@@ -123,21 +147,23 @@ export default function Home() {
             ) : (
                 <div className="space-y-8">
                      {/* Result Area */}
-                    <motion.div
-                        layout
-                        className="relative w-full bg-black/50 rounded-2xl border border-white/10 overflow-hidden shadow-2xl"
-                    >
-                        {!processedImage ? (
-                            // Determine what to show while waiting? The loading overlay covers this.
-                            // But we can show the original image blurred or something.
-                            <img src={originalImage} className="w-full h-auto object-contain opacity-50 blur-sm" />
-                        ) : (
-                            <ComparisonSlider 
-                                beforeImage={originalImage} 
-                                afterImage={processedImage} 
-                            />
-                        )}
-                    </motion.div>
+                    <div className="max-w-4xl mx-auto">
+                        <motion.div
+                            layout
+                            className="relative w-full bg-black/50 rounded-2xl border border-white/10 overflow-hidden shadow-2xl"
+                        >
+                            {!processedImage ? (
+                                // Determine what to show while waiting? The loading overlay covers this.
+                                // But we can show the original image blurred or something.
+                                <img src={originalImage} className="w-full h-auto object-contain opacity-50 blur-sm" />
+                            ) : (
+                                <ComparisonSlider 
+                                    beforeImage={originalImage} 
+                                    afterImage={processedImage} 
+                                />
+                            )}
+                        </motion.div>
+                    </div>
 
                     {/* Actions */}
                      <motion.div 
