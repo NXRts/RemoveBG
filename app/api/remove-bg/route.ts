@@ -12,44 +12,55 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // NOTE: This is where we would call the external API (e.g., Replicate, remove.bg)
-    // For demonstration purposes, we will mock a delay and return the SAME image 
-    // but in a real app, this would be the processed image URL/Blob.
-    // To make it look "processed" in a demo without an API key, we simulate valid response.
-    
-    // Check for API Key
     const apiKey = process.env.REMOVE_BG_API_KEY;
-    
-    if (apiKey) {
-        // Implementation for remove.bg or Replicate would go here
-        // const response = await fetch('https://api.remove.bg/v1.0/removebg', ...
+
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "API Key not configured" },
+        { status: 500 }
+      );
     }
 
-    // Mock processing delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Convert file to buffer for sending
+    const imageBuffer = await image.arrayBuffer();
 
-    // In a real scenario without an API key for this demo, we can't actually remove the background.
-    // However, the user asked for the *code* to do it.
-    // I will return the original image as the "result" for the mock, 
-    // but provide the commented out code for the real implementation.
-
-    // Return the image blob (simulating processed image)
-    // We just return success: true and a mock URL (or the uploaded one reflected)
-    // Ideally we return the file buffer.
+    // Prepare FormData for Remove.bg API
+    const apiFormData = new FormData();
+    apiFormData.append("image_file", new Blob([imageBuffer], { type: image.type }));
+    apiFormData.append("size", "auto");
     
-    const buffer = await image.arrayBuffer();
-    
-    // Return image as response
-    return new NextResponse(buffer, {
+    // Call Remove.bg API
+    const response = await fetch("https://api.remove.bg/v1.0/removebg", {
+      method: "POST",
       headers: {
-        "Content-Type": image.type,
+        "X-Api-Key": apiKey,
+      },
+      body: apiFormData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Remove.bg API Error:", errorData);
+      return NextResponse.json(
+        { error: errorData.errors?.[0]?.title || "Failed to remove background" },
+        { status: response.status }
+      );
+    }
+
+    // Get the processed image blob
+    const processedImageBlob = await response.blob();
+    const processedImageBuffer = await processedImageBlob.arrayBuffer();
+
+    return new NextResponse(processedImageBuffer, {
+      headers: {
+        "Content-Type": "image/png",
       },
     });
 
   } catch (error) {
     console.error("Error processing image:", error);
     return NextResponse.json(
-      { error: "Failed to process image" },
+      { error: "Internal server error during processing" },
       { status: 500 }
     );
   }
