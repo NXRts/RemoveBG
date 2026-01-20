@@ -20,7 +20,7 @@ export default function LoadingOverlay({
         className="flex flex-col items-center gap-6 p-8"
       >
         <div className="relative">
-          <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-primary to-blue-500 blur-lg opacity-75 animate-pulse" />
+          <div className="absolute -inset-1 rounded-full bg-linear-to-r from-primary to-blue-500 blur-lg opacity-75 animate-pulse" />
           <div className="relative bg-surface rounded-full p-4 ring-1 ring-white/10">
              <Loader2 className="w-10 h-10 text-white animate-spin" />
           </div>
@@ -36,7 +36,7 @@ export default function LoadingOverlay({
         {/* Progress Bar */}
         <div className="w-64 h-2 bg-white/10 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-primary to-blue-500"
+            className="h-full bg-linear-to-r from-primary to-blue-500"
             initial={{ width: "0%" }}
             animate={{ width: `${progress}%` }}
             transition={{ duration: 0.5 }}

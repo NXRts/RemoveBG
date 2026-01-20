@@ -113,7 +113,7 @@ export default function Home() {
              <Sparkles className="w-4 h-4 text-primary" />
              <span>AI-Powered HD Precision</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-gradient-to-b from-white to-white/50 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-linear-to-b from-white to-white/50 bg-clip-text text-transparent">
             Remove Backgrounds <br/> without Quality Loss
           </h1>
           <p className="text-lg text-muted-foreground">
