@@ -1,65 +1,170 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import Dropzone from "@/components/ui/Dropzone";
+import ComparisonSlider from "@/components/ui/ComparisonSlider";
+import LoadingOverlay from "@/components/ui/LoadingOverlay";
+import { Download, Sparkles, Image as ImageIcon } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Home() {
+  const [originalImage, setOriginalImage] = useState<string | null>(null);
+  const [processedImage, setProcessedImage] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const handleFileSelect = async (file: File) => {
+    // Create local preview
+    const objectUrl = URL.createObjectURL(file);
+    setOriginalImage(objectUrl);
+    setProcessedImage(null); // Reset previous result
+    setIsProcessing(true);
+    setProgress(0);
+
+    // Simulate progress
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 90) return prev;
+        return prev + 10;
+      });
+    }, 200);
+
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch("/api/remove-bg", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Processing failed");
+
+      const blob = await response.blob();
+      const processedUrl = URL.createObjectURL(blob);
+      
+      clearInterval(interval);
+      setProgress(100);
+      
+      // Artificial delay to show 100%
+      setTimeout(() => {
+        setProcessedImage(processedUrl);
+        setIsProcessing(false);
+      }, 500);
+
+    } catch (error) {
+      console.error(error);
+      setIsProcessing(false);
+      clearInterval(interval);
+      alert("Failed to process image. Please try again.");
+    }
+  };
+
+  const downloadImage = () => {
+    if (!processedImage) return;
+    const link = document.createElement("a");
+    link.href = processedImage;
+    link.download = "removed-bg-hd.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const reset = () => {
+    setOriginalImage(null);
+    setProcessedImage(null);
+    setProgress(0);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen bg-background text-foreground relative overflow-hidden selection:bg-primary/30">
+        
+      {/* Background Gradients */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px] mix-blend-screen animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] mix-blend-screen" />
+      </div>
+
+      <div className="container mx-auto px-4 py-12 md:py-20 flex flex-col items-center gap-12">
+        
+        {/* Header */}
+        <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center space-y-4 max-w-2xl"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sm font-medium text-primary-foreground/80 mb-4">
+             <Sparkles className="w-4 h-4 text-primary" />
+             <span>AI-Powered HD Precision</span>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight bg-gradient-to-b from-white to-white/50 bg-clip-text text-transparent">
+            Remove Backgrounds <br/> without Quality Loss
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-lg text-muted-foreground">
+            Instantly process 4K/HD images. Keep every pixel of detail.
           </p>
+        </motion.div>
+
+        {/* Main Interface */}
+        <div className="w-full max-w-5xl">
+            {isProcessing && <LoadingOverlay progress={progress} />}
+            
+            {!originalImage ? (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    <Dropzone onFileSelect={handleFileSelect} />
+                </motion.div>
+            ) : (
+                <div className="space-y-8">
+                     {/* Result Area */}
+                    <motion.div
+                        layout
+                        className="relative w-full aspect-[16/9] md:aspect-[21/9] lg:aspect-video bg-black/50 rounded-2xl border border-white/10 overflow-hidden shadow-2xl"
+                    >
+                        {!processedImage ? (
+                            // Determine what to show while waiting? The loading overlay covers this.
+                            // But we can show the original image blurred or something.
+                            <img src={originalImage} className="w-full h-full object-contain opacity-50 blur-sm" />
+                        ) : (
+                            <ComparisonSlider 
+                                beforeImage={originalImage} 
+                                afterImage={processedImage} 
+                                className="h-full"
+                            />
+                        )}
+                    </motion.div>
+
+                    {/* Actions */}
+                     <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-wrap items-center justify-center gap-4"
+                     >
+                        <button 
+                            onClick={reset}
+                            className="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-all font-medium flex items-center gap-2"
+                        >
+                            <ImageIcon className="w-5 h-5" />
+                            Upload Another
+                        </button>
+                        
+                        {processedImage && (
+                            <button 
+                                onClick={downloadImage}
+                                className="px-8 py-3 rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/25 transition-all font-bold flex items-center gap-2 transform hover:scale-105 active:scale-95"
+                            >
+                                <Download className="w-5 h-5" />
+                                Download HD PNG
+                            </button>
+                        )}
+                     </motion.div>
+                </div>
+            )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
