@@ -38,7 +38,10 @@ export default function Home() {
         body: formData,
       });
 
-      if (!response.ok) throw new Error("Processing failed");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Processing failed");
+      }
 
       const blob = await response.blob();
       const processedUrl = URL.createObjectURL(blob);
@@ -56,7 +59,7 @@ export default function Home() {
       console.error(error);
       setIsProcessing(false);
       clearInterval(interval);
-      alert("Failed to process image. Please try again.");
+      alert(error instanceof Error ? error.message : "Failed to process image. Please try again.");
     }
   };
 
