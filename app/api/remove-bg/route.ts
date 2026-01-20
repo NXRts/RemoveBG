@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     // Prepare FormData for Remove.bg API
     const apiFormData = new FormData();
     apiFormData.append("image_file", new Blob([imageBuffer], { type: image.type }));
-    apiFormData.append("size", "auto");
+    apiFormData.append("size", "auto"); // Revert to auto to avoid credit issues
     
     // Call Remove.bg API
     const response = await fetch("https://api.remove.bg/v1.0/removebg", {
