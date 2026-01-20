@@ -147,7 +147,7 @@ export default function Home() {
             ) : (
                 <div className="space-y-8">
                      {/* Result Area */}
-                    <div className="max-w-4xl mx-auto">
+                    <div className="max-w-lg mx-auto">
                         <motion.div
                             layout
                             className="relative w-full bg-black/50 rounded-2xl border border-white/10 overflow-hidden shadow-2xl"
